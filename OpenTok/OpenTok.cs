@@ -35,14 +35,14 @@ namespace Nyhren.OpenTokSDK
             // can't add to default headers since client is static
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.opentok.com/session/create");
             httpRequestMessage.Headers.Add("X-OPENTOK-AUTH", token);
-            var data = new Dictionary<string, string>
-            {
-                {"location", ""}, // do not use unless first connecting client isn't representative for other participants
-                {"p2p.preference", MediaModes[(int)mediaMode]}, // default disabled - the session uses the OpenTok Media Router. enabled - relayed
-                {"archiveMode", "manaul"} // default manual, if always you must also set the p2p.preference parameter to disabled
-            };
-            // TODO set post body to data (but defaults are prolly fine for most cases)
-            httpRequestMessage.Content = new StringContent("", Encoding.UTF8, "application/x-www-form-urlencoded");
+            string location = ""; // do not use unless first connecting client isn't representative for other participants
+            string p2ppreference = MediaModes[(int)mediaMode]; // default disabled - the session uses the OpenTok Media Router. enabled - relayed
+            string archiveMode = "manual"; // default manual, if always you must also set the p2p.preference parameter to disabled
+            var requestContent = string.Format("location={0}&p2p.preference={1}&archiveMode={2}",
+                Uri.EscapeDataString(location),
+                Uri.EscapeDataString(p2ppreference),
+                Uri.EscapeDataString(archiveMode));
+            httpRequestMessage.Content = new StringContent(requestContent, Encoding.UTF8, "application/x-www-form-urlencoded");
             var response = await client.SendAsync(httpRequestMessage);
 
             using (var reader = new StreamReader(await response.Content.ReadAsStreamAsync()))
