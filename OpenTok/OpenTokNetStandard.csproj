@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Authors>Andreas Nyhrén</Authors>
+    <Company>-</Company>
+    <Description>Implementation of the Tokbox OpenTok REST api for .Net Standard and port of a few SDK methods</Description>
+    <PackageProjectUrl>https://github.com/ErikAndreas/OpenTokNetStandardSDK</PackageProjectUrl>
+    <RepositoryType>Github</RepositoryType>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.4.0" />

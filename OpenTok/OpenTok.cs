@@ -4,8 +4,6 @@ using System.Net.Http;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
-using System.Linq;
-using System.Security.Cryptography;
 using System.Web;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -49,7 +47,7 @@ namespace Nyhren.OpenTokSDK
         {
             double createTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             double expireTime = createTime + ttl; // seconds since epoch
-            int nonce = GetRandomNumber();
+            int nonce = Utils.GetRandomNumber();
             return GenerateToken(secret, apiKey, sessionId, role, expireTime, data, createTime, nonce);
         }
 
@@ -69,8 +67,7 @@ namespace Nyhren.OpenTokSDK
             );
             token.Payload["ist"] = "project";
             token.Payload["iat"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var jwt = tokenHandler.WriteToken(token);
-            return jwt;
+            return tokenHandler.WriteToken(token);
         }
 
         private static string GenerateToken(string secret, string apiKey, string sessionId, string role, double expireTime, string data, double createTime, int nonce)
@@ -87,6 +84,7 @@ namespace Nyhren.OpenTokSDK
             dataStringBuilder.Append(string.Format("&nonce={0}", nonce));
             dataStringBuilder.Append(string.Format("&role={0}", role));
             dataStringBuilder.Append(string.Format("&expire_time={0}", (long)expireTime));
+            // see https://tokbox.com/developer/guides/create-token/ Connection data
             if (!String.IsNullOrEmpty(connectionData))
             {
                 dataStringBuilder.Append(string.Format("&connection_data={0}", HttpUtility.UrlEncode(connectionData)));
@@ -96,7 +94,7 @@ namespace Nyhren.OpenTokSDK
 
         private static string BuildTokenString(string secret, string apiKey, string dataString)
         {
-            string signature = EncodeHMAC(dataString, secret);
+            string signature = Utils.EncodeHMAC(dataString, secret);
 
             StringBuilder innerBuilder = new StringBuilder();
             innerBuilder.Append(string.Format("partner_id={0}", apiKey));
@@ -104,25 +102,6 @@ namespace Nyhren.OpenTokSDK
 
             byte[] innerBuilderBytes = Encoding.UTF8.GetBytes(innerBuilder.ToString());
             return "T1==" + Convert.ToBase64String(innerBuilderBytes);
-        }
-
-        private static string EncodeHMAC(string input, string key)
-        {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            HMACSHA1 hmac = new HMACSHA1(keyBytes);
-            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-            byte[] hashedValue = hmac.ComputeHash(inputBytes);
-
-            // iterates over bytes and converts them each to a 2 digit hexidecimal string representation,
-            // concatenates, and converts to lower case
-            string encodedInput = string.Concat(hashedValue.Select(b => string.Format("{0:X2}", b)).ToArray());
-            return encodedInput.ToLowerInvariant();
-        }
-
-        private static int GetRandomNumber()
-        {
-            Random random = new Random();
-            return random.Next(0, 999999);
         }
     }
 }
