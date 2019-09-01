@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Web;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Nyhren.OpenTokSDK
 {
@@ -20,18 +21,27 @@ namespace Nyhren.OpenTokSDK
          */
         private static HttpClient client;
 
+        private static string[] MediaModes = new string[] { "disbled", "enabled" };
+
         static OpenTok()
         {
             client = new HttpClient();
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         }
 
-        public static async Task<string> CreateSessionAsync(string secret, string apiKey)
+        public static async Task<string> CreateSessionAsync(string secret, string apiKey, MediaMode mediaMode = MediaMode.ROUTED)
         {
             var token = GetTokboxToken(secret, apiKey);
             // can't add to default headers since client is static
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.opentok.com/session/create");
             httpRequestMessage.Headers.Add("X-OPENTOK-AUTH", token);
+            var data = new Dictionary<string, string>
+            {
+                {"location", ""}, // do not use unless first connecting client isn't representative for other participants
+                {"p2p.preference", MediaModes[(int)mediaMode]}, // default disabled - the session uses the OpenTok Media Router. enabled - relayed
+                {"archiveMode", "manaul"} // default manual, if always you must also set the p2p.preference parameter to disabled
+            };
+            // TODO set post body to data (but defaults are prolly fine for most cases)
             httpRequestMessage.Content = new StringContent("", Encoding.UTF8, "application/x-www-form-urlencoded");
             var response = await client.SendAsync(httpRequestMessage);
 
@@ -103,5 +113,11 @@ namespace Nyhren.OpenTokSDK
             byte[] innerBuilderBytes = Encoding.UTF8.GetBytes(innerBuilder.ToString());
             return "T1==" + Convert.ToBase64String(innerBuilderBytes);
         }
+    }
+
+    public enum MediaMode
+    {
+        ROUTED,
+        RELAYED
     }
 }
